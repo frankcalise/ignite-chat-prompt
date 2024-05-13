@@ -17,9 +17,7 @@
       "fallbackToCacheTimeout": 0
     },
     "jsEngine": "hermes",
-    "assetBundlePatterns": [
-      "**/*"
-    ],
+    "assetBundlePatterns": ["**/*"],
     "android": {
       "icon": "./assets/images/app-icon-android-legacy.png",
       "package": "com.ignitechatprompt",
@@ -66,7 +64,14 @@
           }
         }
       ],
-      "expo-font"
+      "expo-font",
+      [
+        "@nonsenselearning/voice",
+        {
+          "microphonePermission": "Allow $(PRODUCT_NAME) to access the microphone",
+          "speechRecognitionPermissions": "Allow $(PRODUCT_NAME) to securely recognize user speech"
+        }
+      ]
     ],
     "experiments": {
       "tsconfigPaths": true
