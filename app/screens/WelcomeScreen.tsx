@@ -1,105 +1,71 @@
 import { observer } from "mobx-react-lite"
 import React, { FC } from "react"
-import { Image, ImageStyle, TextStyle, View, ViewStyle } from "react-native"
-import { Button, Text } from "app/components"
-import { isRTL } from "../i18n"
-import { useStores } from "../models"
+import { TextInput, View, ViewStyle } from "react-native"
 import { AppStackScreenProps } from "../navigators"
-import { colors, spacing } from "../theme"
-import { useHeader } from "../utils/useHeader"
-import { useSafeAreaInsetsStyle } from "../utils/useSafeAreaInsetsStyle"
-
-const welcomeLogo = require("../../assets/images/logo.png")
-const welcomeFace = require("../../assets/images/welcome-face.png")
+import { PromptBar } from "app/components/PromptBar"
+import Animated, { interpolate, useAnimatedStyle } from "react-native-reanimated"
+import { Message } from "app/components/Message"
+import { useReanimatedKeyboardAnimation } from "react-native-keyboard-controller"
+import { history } from "app/components/Message/data"
+import { useSafeAreaInsets } from "react-native-safe-area-context"
+import { useSafeAreaInsetsStyle } from "app/utils/useSafeAreaInsetsStyle"
+const AnimatedTextInput = Animated.createAnimatedComponent(TextInput)
 
 interface WelcomeScreenProps extends AppStackScreenProps<"Welcome"> {}
 
 export const WelcomeScreen: FC<WelcomeScreenProps> = observer(function WelcomeScreen(_props) {
-  const { navigation } = _props
-  const {
-    authenticationStore: { logout },
-  } = useStores()
+  const { height, progress } = useReanimatedKeyboardAnimation()
 
-  function goNext() {
-    navigation.navigate("Demo", { screen: "DemoShowroom", params: {} })
-  }
+  const $containerInsets = useSafeAreaInsetsStyle(["top"])
+  const { bottom } = useSafeAreaInsets()
 
-  useHeader(
-    {
-      rightTx: "common.logOut",
-      onRightPress: logout,
-    },
-    [logout],
+  const scrollViewStyle = useAnimatedStyle(
+    () => ({
+      transform: [{ translateY: height.value }, ...$inverted.transform],
+    }),
+    [],
   )
 
-  const $bottomContainerInsets = useSafeAreaInsetsStyle(["bottom"])
+  const fakeView = useAnimatedStyle(
+    () => ({
+      height: Math.abs(height.value),
+    }),
+    [],
+  )
+
+  const $bottomHeight = useAnimatedStyle(
+    () => ({
+      height: interpolate(progress.value, [0, 1], [bottom, 0]),
+      // backgroundColor: "blue",
+    }),
+    [progress, bottom],
+  )
 
   return (
-    <View style={$container}>
-      <View style={$topContainer}>
-        <Image style={$welcomeLogo} source={welcomeLogo} resizeMode="contain" />
-        <Text
-          testID="welcome-heading"
-          style={$welcomeHeading}
-          tx="welcomeScreen.readyForLaunch"
-          preset="heading"
-        />
-        <Text tx="welcomeScreen.exciting" preset="subheading" />
-        <Image style={$welcomeFace} source={welcomeFace} resizeMode="contain" />
-      </View>
-
-      <View style={[$bottomContainer, $bottomContainerInsets]}>
-        <Text tx="welcomeScreen.postscript" size="md" />
-
-        <Button
-          testID="next-screen-button"
-          preset="reversed"
-          tx="welcomeScreen.letsGo"
-          onPress={goNext}
-        />
-      </View>
+    <View style={[$container, $containerInsets]}>
+      <Animated.ScrollView showsVerticalScrollIndicator={false} style={scrollViewStyle}>
+        <View style={$inverted}>
+          <Animated.View style={fakeView} />
+          {history.map((message, index) => (
+            <Message key={index} {...message} />
+          ))}
+        </View>
+      </Animated.ScrollView>
+      <PromptBar />
+      <Animated.View style={$bottomHeight} />
     </View>
   )
 })
 
 const $container: ViewStyle = {
   flex: 1,
-  backgroundColor: colors.background,
+  justifyContent: "flex-end",
 }
 
-const $topContainer: ViewStyle = {
-  flexShrink: 1,
-  flexGrow: 1,
-  flexBasis: "57%",
-  justifyContent: "center",
-  paddingHorizontal: spacing.lg,
-}
-
-const $bottomContainer: ViewStyle = {
-  flexShrink: 1,
-  flexGrow: 0,
-  flexBasis: "43%",
-  backgroundColor: colors.palette.neutral100,
-  borderTopLeftRadius: 16,
-  borderTopRightRadius: 16,
-  paddingHorizontal: spacing.lg,
-  justifyContent: "space-around",
-}
-const $welcomeLogo: ImageStyle = {
-  height: 88,
-  width: "100%",
-  marginBottom: spacing.xxl,
-}
-
-const $welcomeFace: ImageStyle = {
-  height: 169,
-  width: 269,
-  position: "absolute",
-  bottom: -47,
-  right: -80,
-  transform: [{ scaleX: isRTL ? -1 : 1 }],
-}
-
-const $welcomeHeading: TextStyle = {
-  marginBottom: spacing.md,
+const $inverted: ViewStyle = {
+  transform: [
+    {
+      scaleY: -1,
+    },
+  ],
 }
